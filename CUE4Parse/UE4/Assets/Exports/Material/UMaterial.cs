@@ -58,7 +58,7 @@ public class UMaterial : UMaterialInterface
 
         if (Ar.Ver >= EUnrealEngineObjectUE4Version.PURGED_FMATERIAL_COMPILE_OUTPUTS)
         {
-            if (Ar is { Game: >= GAME_UE4_25, Owner.Provider.ReadShaderMaps: true })
+            if (Ar is { Game: >= GAME_UE4_25, ReadShaderMaps: true })
             {
                 var saved = Ar.Position;
                 try

@@ -36,6 +36,9 @@ namespace CUE4Parse.UE4.Assets.Readers
         // which is the optional segment's own map for its exports rather than the base package's.
         public FNameEntrySerialized[]? NameMap => RealmNameMap ?? Owner?.NameMap;
 
+        public bool ReadShaderMaps => Owner is AbstractUePackage { ReadShaderMapsOverride: { } value }
+            ? value : Owner?.Provider?.ReadShaderMaps ?? false;
+
         public bool HasUnversionedProperties => Owner?.HasFlags(EPackageFlags.PKG_UnversionedProperties) ?? false;
         public bool IsFilterEditorOnly => Owner?.HasFlags(EPackageFlags.PKG_FilterEditorOnly) ?? false;
         public bool IsLoadingFromCookedPackage => Owner?.HasFlags(EPackageFlags.PKG_Cooked) ?? false;

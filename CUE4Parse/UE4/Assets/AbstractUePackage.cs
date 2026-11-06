@@ -15,6 +15,13 @@ namespace CUE4Parse.UE4.Assets;
 public abstract class AbstractUePackage : UObject, IPackage
 {
     public IFileProvider? Provider { get; }
+    /// <summary>
+    /// Overrides the provider setting for shader maps when an export is deserialized.
+    /// Set this before loading the export. Exports already loaded are not reloaded;
+    /// eager package loading cannot be overridden after package construction.
+    /// Null uses the provider setting.
+    /// </summary>
+    public bool? ReadShaderMapsOverride { get; set; }
     public string? ArchiveName { get; }
     public TypeMappings? Mappings => Provider?.MappingsForGame;
 
