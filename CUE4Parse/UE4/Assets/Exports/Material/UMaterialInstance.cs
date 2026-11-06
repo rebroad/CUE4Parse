@@ -50,7 +50,7 @@ public class UMaterialInstance : UMaterialInterface
                     bHasNonUPropertyStaticParameters = true;
                 }
 
-                if (Ar is { Game: >= GAME_UE4_25, Owner.Provider.ReadShaderMaps: true })
+                if (Ar is { Game: >= GAME_UE4_25, ReadShaderMaps: true })
                 {
                     var saved = Ar.Position;
                     if (Ar.Game is GAME_DeadIsland2)
@@ -95,7 +95,7 @@ public class UMaterialInstance : UMaterialInterface
             }
         }
 
-        if (Ar.Game is GAME_DeadByDaylight && Ar.Position < validPos && Ar is { Owner.Provider.ReadShaderMaps: true })
+        if (Ar.Game is GAME_DeadByDaylight && Ar.Position < validPos && Ar is { ReadShaderMaps: true })
             CustomGameData = Ar.ReadArray(() => new FStructFallback(Ar, "BHVRVariantConfigurator", FRawHeader.FullRead, ReadType.RAW));
         if (Ar.Game == GAME_Valorant && !bHasStaticPermutationResource)
             Ar.Position += 8; // 0.0f and 1.0f, for all
