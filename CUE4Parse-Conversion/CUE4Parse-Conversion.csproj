@@ -10,7 +10,6 @@
     <PackageReference Include="AssetRipper.TextureDecoder" />
     <PackageReference Include="SharpGLTF.Core" />
     <PackageReference Include="SharpGLTF.Toolkit" />
-    <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="SkiaSharp" />
   </ItemGroup>
 

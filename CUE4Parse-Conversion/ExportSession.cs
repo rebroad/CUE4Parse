@@ -79,12 +79,23 @@ public sealed class ExportSession(Action<StreamingLevelFilterArgs, CancellationT
     private readonly ConcurrentQueue<ExporterBase> _roots = new();
     private readonly ConcurrentDictionary<string, byte> _paths = new(StringComparer.OrdinalIgnoreCase);
 
+    private readonly ConcurrentDictionary<Type, Func<UObject, ExporterBase>> _customExporters = new();
+
+    public ExportSession RegisterExporter<T>(Func<T, ExporterBase> factory) where T : UObject
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+        _customExporters[typeof(T)] = export => factory((T)export);
+        return this;
+    }
+
     public IExportSession Add(UObject export)
     {
+        if (_customExporters.TryGetValue(export.GetType(), out var customFactory))
+            return Add(customFactory(export));
+
         return export switch
         {
             UTexture texture => Add(new TextureExporter(texture)),
-            UPaperFlipbook flipbook => Add(new FlipbookExporter(flipbook)),
             UPaperSprite sprite => Add(new SpriteExporter(sprite)),
             UMaterialInterface material => Add(new MaterialExporter(material)),
             USkinnedAsset skinnedAsset => Add(new SkinnedAssetExporter(skinnedAsset)),

@@ -62,7 +62,7 @@ Further detailed documentation is available in the [wiki](https://github.com/Fab
 
 ### Release builds
 
-The `CUE4Parse-Conversion` package uses SixLabors.ImageSharp 3.2.0. Release builds require a Six Labors license key; eligible users can apply for a free Community license at https://sixlabors.com/pricing/. Set `SixLaborsLicenseKey` locally and configure the `SIXLABORS_LICENSE_KEY` GitHub Actions secret for package releases. Never commit the key.
+The core `CUE4Parse-Conversion` package does not depend on ImageSharp. Optional animated texture export is available from `CUE4Parse-Conversion.ImageSharp`; call `UseImageSharpFlipbooks()` on an `ExportSession` to enable it. This adapter directly references SixLabors.ImageSharp 3.2.0 and therefore requires a valid Six Labors license key when built. Eligible users can apply for a Community license at https://licensing.sixlabors.com/. Provide the key locally as `SIXLABORS_LICENSE_KEY`; never commit an unrestricted or commercial key. The ImageSharp adapter and its tests are intentionally outside the default solution build.
 
 ### License:
 CUE4Parse is licensed under [Apache License 2.0](https://github.com/FabianFG/CUE4Parse/blob/master/LICENSE), and licenses of third-party libraries used are listed [here](https://github.com/FabianFG/CUE4Parse/blob/master/NOTICE).

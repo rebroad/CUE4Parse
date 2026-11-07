@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>CUE4Parse_Conversion.ImageSharp</RootNamespace>
+    <Description>Optional ImageSharp-backed animated texture exporters for CUE4Parse</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CUE4Parse-Conversion\CUE4Parse-Conversion.csproj" />
+  </ItemGroup>
+</Project>

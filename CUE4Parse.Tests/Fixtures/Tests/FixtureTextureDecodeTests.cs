@@ -477,16 +477,16 @@ public class FixtureTextureDecodeTests
 
     private static void AssertImageMatchesBitmap(CTexture decoded, SKBitmap bitmap)
     {
-        using var image = decoded.ToImage();
+        using var image = decoded.ToSkBitmap();
         Assert.Equal((bitmap.Width, bitmap.Height), (image.Width, image.Height));
         for (var y = 0; y < bitmap.Height; y++)
         {
             for (var x = 0; x < bitmap.Width; x++)
             {
                 var expected = bitmap.GetPixel(x, y);
-                var actual = image[x, y];
+                var actual = image.GetPixel(x, y);
                 Assert.Equal((expected.Red, expected.Green, expected.Blue, expected.Alpha),
-                    (actual.R, actual.G, actual.B, actual.A));
+                    (actual.Red, actual.Green, actual.Blue, actual.Alpha));
             }
         }
     }

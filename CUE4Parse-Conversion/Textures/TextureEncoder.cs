@@ -5,9 +5,6 @@ using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Objects.Core.Math;
 using OffiUtils;
 using SkiaSharp;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Tga;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace CUE4Parse_Conversion.Textures;
 
@@ -67,22 +64,69 @@ public static class TextureEncoder
     {
         using var skBitmap = bitmap.ToSkBitmap();
         using var pixels = skBitmap.PeekPixels();
-        using Image image = skBitmap.ColorType switch
-        {
-            SKColorType.Bgra8888 => Image.LoadPixelData<Bgra32>(pixels.GetPixelSpan(), skBitmap.Width, skBitmap.Height),
-            SKColorType.Rgba8888 => Image.LoadPixelData<Rgba32>(pixels.GetPixelSpan(), skBitmap.Width, skBitmap.Height),
-            SKColorType.Gray8 => Image.LoadPixelData<L8>(pixels.GetPixelSpan(), skBitmap.Width, skBitmap.Height),
-            _ => throw new NotSupportedException("Unsupported TGA color type: " + skBitmap.ColorType)
-        };
-
         using var stream = new MemoryStream();
-        image.Save(stream, new TgaEncoder
+        Span<byte> header = stackalloc byte[18];
+        header[2] = options.TgaRleCompression ? (byte)10 : (byte)2; // RLE or uncompressed true-color image
+        header[12] = (byte)skBitmap.Width;
+        header[13] = (byte)(skBitmap.Width >> 8);
+        header[14] = (byte)skBitmap.Height;
+        header[15] = (byte)(skBitmap.Height >> 8);
+        header[16] = 32;
+        header[17] = 0x28; // top-left origin, 8 alpha bits
+        stream.Write(header);
+
+        var rowBytes = checked(skBitmap.Width * 4);
+        var row = new byte[rowBytes];
+        for (var y = 0; y < skBitmap.Height; y++)
         {
-            BitsPerPixel = TgaBitsPerPixel.Pixel32,
-            Compression = options.TgaRleCompression ? TgaCompression.RunLength : TgaCompression.None
-        });
+            for (var x = 0; x < skBitmap.Width; x++)
+            {
+                var color = skBitmap.GetPixel(x, y);
+                var offset = x * 4;
+                row[offset] = color.Blue;
+                row[offset + 1] = color.Green;
+                row[offset + 2] = color.Red;
+                row[offset + 3] = color.Alpha;
+            }
+
+            if (options.TgaRleCompression)
+                WriteTgaRleRow(stream, row);
+            else
+                stream.Write(row);
+        }
 
         return stream.ToArray();
+    }
+
+    private static void WriteTgaRleRow(Stream stream, ReadOnlySpan<byte> row)
+    {
+        var pixelCount = row.Length / 4;
+        var x = 0;
+        while (x < pixelCount)
+        {
+            var run = 1;
+            while (x + run < pixelCount && run < 128 && row.Slice(x * 4, 4).SequenceEqual(row.Slice((x + run) * 4, 4)))
+                run++;
+
+            if (run >= 2)
+            {
+                stream.WriteByte((byte)(0x80 | (run - 1)));
+                stream.Write(row.Slice(x * 4, 4));
+                x += run;
+                continue;
+            }
+
+            var rawStart = x++;
+            while (x < pixelCount && x - rawStart < 128)
+            {
+                if (x + 1 < pixelCount && row.Slice(x * 4, 4).SequenceEqual(row.Slice((x + 1) * 4, 4)))
+                    break;
+                x++;
+            }
+
+            stream.WriteByte((byte)(x - rawStart - 1));
+            stream.Write(row.Slice(rawStart * 4, (x - rawStart) * 4));
+        }
     }
 
 #region Hdr
@@ -310,52 +354,6 @@ public static class TextureEncoder
 
         var info = new SKImageInfo(texture.Width, texture.Height, skColorType, SKAlphaType.Unpremul);
         return InstallPixels(dataSpan, convertedData, info);
-    }
-
-    public static Image<Rgba32> ToImage(this CTexture texture)
-    {
-        switch (texture.PixelFormat)
-        {
-            case EPixelFormat.PF_R8G8B8A8:
-                return Image.LoadPixelData<Rgba32>(texture.Data, texture.Width, texture.Height);
-            case EPixelFormat.PF_A8R8G8B8:
-            case EPixelFormat.PF_B8G8R8A8:
-            {
-                using var bgra = Image.LoadPixelData<Bgra32>(texture.Data, texture.Width, texture.Height);
-                return bgra.CloneAs<Rgba32>();
-            }
-            case EPixelFormat.PF_R8:
-            case EPixelFormat.PF_G8:
-            {
-                using var gray = Image.LoadPixelData<L8>(texture.Data, texture.Width, texture.Height);
-                return gray.CloneAs<Rgba32>();
-            }
-            case EPixelFormat.PF_FloatRGB:
-            case EPixelFormat.PF_FloatRGBA:
-            case EPixelFormat.PF_R32_FLOAT:
-            case EPixelFormat.PF_R32G32B32F:
-            case EPixelFormat.PF_A32B32G32R32F:
-            case EPixelFormat.PF_A16B16G16R16:
-            case EPixelFormat.PF_G16:
-            case EPixelFormat.PF_G16R16:
-            case EPixelFormat.PF_G16R16F:
-            case EPixelFormat.PF_G32R32F:
-            case EPixelFormat.PF_R16F:
-            case EPixelFormat.PF_V8U8:
-            {
-                var span = ConvertToRgba8(texture, out var ptr);
-                try
-                {
-                    return Image.LoadPixelData<Rgba32>(span, texture.Width, texture.Height);
-                }
-                finally
-                {
-                    MemoryUtils.NativeFree(ptr);
-                }
-            }
-            default:
-                throw new NotImplementedException("Unsupported pixel format: " + texture.PixelFormat);
-        }
     }
 
     private static Span<byte> ConvertToRgba8(CTexture texture, out nint ptr)

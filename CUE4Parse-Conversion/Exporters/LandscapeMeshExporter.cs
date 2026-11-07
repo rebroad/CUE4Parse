@@ -5,7 +5,6 @@ using CUE4Parse_Conversion.Options;
 using CUE4Parse.UE4.Assets.Exports.Actor;
 using CUE4Parse.UE4.Assets.Exports.Component.Landscape;
 using CUE4Parse.UE4.Objects.UObject;
-using SixLabors.ImageSharp.Formats.Png;
 using SkiaSharp;
 
 namespace CUE4Parse_Conversion.Exporters;
@@ -28,9 +27,7 @@ public sealed class LandscapeMeshExporter(ALandscapeProxy actor) : MeshExporter<
         var additional = new List<ExportFile>();
         if (dto.HeightmapTexture is { } heightmap)
         {
-            using var stream = new MemoryStream();
-            heightmap.Save(stream, new PngEncoder());
-            additional.Add(new ExportFile("png", stream.GetBuffer(), "/heightmap"));
+            additional.Add(new ExportFile("png", heightmap.EncodePng(), "/heightmap"));
         }
 
         if (dto.BitmapTextures is { } bitmaps)
